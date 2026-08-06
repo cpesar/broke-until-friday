@@ -39,7 +39,13 @@ function App() {
       <h1 className="text-2xl font-semibold">Welcome, {session.user.name}</h1>
       <p className="text-muted-foreground text-sm">{session.user.email}</p>
       <p className="text-muted-foreground text-sm">{meCheck ?? "Checking with server…"}</p>
-      <Button variant="outline" onClick={() => authClient.signOut()}>
+      <Button
+        variant="outline"
+        onClick={async () => {
+          await authClient.signOut();
+          window.location.href = "/";
+        }}
+      >
         Sign out
       </Button>
     </div>
