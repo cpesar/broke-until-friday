@@ -91,7 +91,12 @@ export function AuthCard() {
             variant="outline"
             className="w-full"
             disabled={loading}
-            onClick={() => authClient.signIn.social({ provider: "google" })}
+            onClick={() =>
+              authClient.signIn.social({
+                provider: "google",
+                callbackURL: window.location.origin,
+              })
+            }
           >
             Continue with Google
           </Button>
