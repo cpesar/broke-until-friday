@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { AuthCard } from "@/components/AuthCard";
+import { PlaidConnect } from "@/components/PlaidConnect";
 import { authClient } from "@/lib/auth-client";
 
 function App() {
@@ -39,6 +40,7 @@ function App() {
       <h1 className="text-2xl font-semibold">Welcome, {session.user.name}</h1>
       <p className="text-muted-foreground text-sm">{session.user.email}</p>
       <p className="text-muted-foreground text-sm">{meCheck ?? "Checking with server…"}</p>
+      <PlaidConnect />
       <Button
         variant="outline"
         onClick={async () => {

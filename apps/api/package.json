@@ -17,7 +17,8 @@
     "better-auth": "^1.6.26",
     "cors": "^2.8.5",
     "drizzle-orm": "^0.45.2",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "plaid": "^45.0.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

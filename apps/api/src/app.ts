@@ -4,6 +4,7 @@ import { toNodeHandler } from "better-auth/node";
 import type { HealthCheckResponse } from "@budget-app/shared";
 import { auth } from "./lib/auth.js";
 import { requireSession } from "./middleware/requireSession.js";
+import { plaidRouter } from "./routes/plaid.js";
 
 export function createApp() {
   const app = express();
@@ -31,6 +32,8 @@ export function createApp() {
   app.get("/api/me", requireSession, (req, res) => {
     res.json({ user: req.session?.user });
   });
+
+  app.use("/api/plaid", plaidRouter);
 
   return app;
 }

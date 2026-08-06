@@ -3,6 +3,8 @@ import {
   text,
   timestamp,
   boolean,
+  uuid,
+  numeric,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -53,4 +55,38 @@ export const verification = pgTable("verification", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const plaidItems = pgTable("plaid_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  plaidItemId: text("plaid_item_id").notNull().unique(),
+  accessTokenEncrypted: text("access_token_encrypted").notNull(),
+  institutionId: text("institution_id").notNull(),
+  institutionName: text("institution_name").notNull(),
+  status: text("status").notNull().default("active"),
+  cursor: text("cursor"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const financialAccounts = pgTable("financial_accounts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  plaidItemId: uuid("plaid_item_id")
+    .notNull()
+    .references(() => plaidItems.id, { onDelete: "cascade" }),
+  plaidAccountId: text("plaid_account_id").notNull().unique(),
+  name: text("name").notNull(),
+  officialName: text("official_name"),
+  type: text("type").notNull(),
+  subtype: text("subtype"),
+  mask: text("mask"),
+  currentBalance: numeric("current_balance"),
+  availableBalance: numeric("available_balance"),
+  isoCurrencyCode: text("iso_currency_code").default("USD"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
