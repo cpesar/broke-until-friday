@@ -7,9 +7,15 @@ import { requireSession } from "./middleware/requireSession.js";
 import { plaidRouter } from "./routes/plaid.js";
 import { plaidWebhookRouter } from "./routes/plaidWebhook.js";
 import { transactionsRouter } from "./routes/transactions.js";
+import { categoriesRouter } from "./routes/categories.js";
+import { seedDefaultCategories } from "./db/seedCategories.js";
 
 export function createApp() {
   const app = express();
+
+  seedDefaultCategories().catch((err: unknown) => {
+    console.error("Failed to seed default categories:", err);
+  });
 
   app.use(
     cors({
@@ -39,6 +45,7 @@ export function createApp() {
 
   app.use("/api/plaid", plaidRouter);
   app.use("/api/transactions", transactionsRouter);
+  app.use("/api/categories", categoriesRouter);
 
   return app;
 }

@@ -1,6 +1,11 @@
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, isNull } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { plaidItems, financialAccounts, transactions } from "../db/schema.js";
+import {
+  plaidItems,
+  financialAccounts,
+  transactions,
+  categories,
+} from "../db/schema.js";
 import { plaidClient } from "../lib/plaid.js";
 import { decrypt } from "./encryption.js";
 
@@ -15,6 +20,20 @@ export async function syncTransactionsForItem(item: PlaidItemRow) {
 
   const accountIdByPlaidId = new Map(
     accounts.map((account) => [account.plaidAccountId, account.id]),
+  );
+
+  const defaultCategories = await db
+    .select({
+      id: categories.id,
+      pfc: categories.plaidPersonalFinanceCategory,
+    })
+    .from(categories)
+    .where(and(eq(categories.isDefault, true), isNull(categories.userId)));
+
+  const categoryIdByPfc = new Map(
+    defaultCategories
+      .filter((c) => c.pfc)
+      .map((c) => [c.pfc as string, c.id]),
   );
 
   let cursor = item.cursor ?? undefined;
@@ -34,10 +53,15 @@ export async function syncTransactionsForItem(item: PlaidItemRow) {
       const financialAccountId = accountIdByPlaidId.get(txn.account_id);
       if (!financialAccountId) continue;
 
+      const categoryId = txn.personal_finance_category?.primary
+        ? categoryIdByPfc.get(txn.personal_finance_category.primary) ?? null
+        : null;
+
       await db
         .insert(transactions)
         .values({
           financialAccountId,
+          categoryId,
           plaidTransactionId: txn.transaction_id,
           amount: txn.amount.toString(),
           isoCurrencyCode: txn.iso_currency_code ?? "USD",
@@ -98,6 +122,22 @@ export async function syncTransactionsForItem(item: PlaidItemRow) {
     .update(plaidItems)
     .set({ cursor, updatedAt: new Date() })
     .where(eq(plaidItems.id, item.id));
+
+  const accountIds = accounts.map((account) => account.id);
+  if (accountIds.length) {
+    for (const [pfc, categoryId] of categoryIdByPfc) {
+      await db
+        .update(transactions)
+        .set({ categoryId })
+        .where(
+          and(
+            inArray(transactions.financialAccountId, accountIds),
+            eq(transactions.plaidPfcPrimary, pfc),
+            isNull(transactions.categoryId),
+          ),
+        );
+    }
+  }
 
   return { added, modified, removed };
 }

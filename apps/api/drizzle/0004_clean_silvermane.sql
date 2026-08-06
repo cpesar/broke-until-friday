@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "categories_default_pfc_idx" ON "categories" USING btree ("plaid_pfc") WHERE "categories"."is_default" = true;

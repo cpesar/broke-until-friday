@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -7,6 +8,7 @@ import {
   numeric,
   date,
   jsonb,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -93,11 +95,36 @@ export const financialAccounts = pgTable("financial_accounts", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const categories = pgTable(
+  "categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").references(() => user.id, {
+      onDelete: "cascade",
+    }),
+    parentCategoryId: uuid("parent_category_id"),
+    name: text("name").notNull(),
+    icon: text("icon"),
+    color: text("color"),
+    plaidPersonalFinanceCategory: text("plaid_pfc"),
+    isDefault: boolean("is_default").notNull().default(false),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("categories_default_pfc_idx")
+      .on(table.plaidPersonalFinanceCategory)
+      .where(sql`${table.isDefault} = true`),
+  ],
+);
+
 export const transactions = pgTable("transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
   financialAccountId: uuid("financial_account_id")
     .notNull()
     .references(() => financialAccounts.id, { onDelete: "cascade" }),
+  categoryId: uuid("category_id").references(() => categories.id, {
+    onDelete: "set null",
+  }),
   plaidTransactionId: text("plaid_transaction_id").notNull().unique(),
   amount: numeric("amount").notNull(),
   isoCurrencyCode: text("iso_currency_code").default("USD"),

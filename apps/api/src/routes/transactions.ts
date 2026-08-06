@@ -1,13 +1,39 @@
 import { Router } from "express";
 import { and, eq, gte, lte, inArray, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { plaidItems, financialAccounts, transactions } from "../db/schema.js";
+import {
+  plaidItems,
+  financialAccounts,
+  transactions,
+  categories,
+} from "../db/schema.js";
 import { requireSession } from "../middleware/requireSession.js";
 import { syncTransactionsForItem } from "../lib/transactionSync.js";
 
 export const transactionsRouter = Router();
 
 transactionsRouter.use(requireSession);
+
+async function getUserAccountIds(userId: string): Promise<string[]> {
+  const items = await db
+    .select({ id: plaidItems.id })
+    .from(plaidItems)
+    .where(eq(plaidItems.userId, userId));
+
+  if (!items.length) return [];
+
+  const accounts = await db
+    .select({ id: financialAccounts.id })
+    .from(financialAccounts)
+    .where(
+      inArray(
+        financialAccounts.plaidItemId,
+        items.map((item) => item.id),
+      ),
+    );
+
+  return accounts.map((account) => account.id);
+}
 
 transactionsRouter.post("/sync", async (req, res) => {
   const userId = req.session!.user.id;
@@ -31,30 +57,13 @@ transactionsRouter.post("/sync", async (req, res) => {
 
 transactionsRouter.get("/", async (req, res) => {
   const userId = req.session!.user.id;
+  const accountIds = await getUserAccountIds(userId);
 
-  const items = await db
-    .select({ id: plaidItems.id })
-    .from(plaidItems)
-    .where(eq(plaidItems.userId, userId));
-
-  const accounts = items.length
-    ? await db
-        .select({ id: financialAccounts.id })
-        .from(financialAccounts)
-        .where(
-          inArray(
-            financialAccounts.plaidItemId,
-            items.map((item) => item.id),
-          ),
-        )
-    : [];
-
-  if (!accounts.length) {
+  if (!accountIds.length) {
     res.json({ transactions: [] });
     return;
   }
 
-  const accountIds = accounts.map((account) => account.id);
   const { from, to } = req.query as { from?: string; to?: string };
 
   const conditions = [
@@ -72,4 +81,53 @@ transactionsRouter.get("/", async (req, res) => {
     .limit(200);
 
   res.json({ transactions: rows });
+});
+
+transactionsRouter.patch("/:id", async (req, res) => {
+  const userId = req.session!.user.id;
+  const { id } = req.params;
+  const { categoryId } = req.body as { categoryId?: string | null };
+
+  if (categoryId === undefined) {
+    res.status(400).json({ error: "categoryId is required" });
+    return;
+  }
+
+  const accountIds = await getUserAccountIds(userId);
+  const [existing] = accountIds.length
+    ? await db
+        .select({ id: transactions.id })
+        .from(transactions)
+        .where(
+          and(
+            eq(transactions.id, id),
+            inArray(transactions.financialAccountId, accountIds),
+          ),
+        )
+    : [];
+
+  if (!existing) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  if (categoryId !== null) {
+    const [category] = await db
+      .select({ id: categories.id, userId: categories.userId })
+      .from(categories)
+      .where(eq(categories.id, categoryId));
+
+    if (!category || (category.userId !== null && category.userId !== userId)) {
+      res.status(400).json({ error: "Invalid categoryId" });
+      return;
+    }
+  }
+
+  const [transaction] = await db
+    .update(transactions)
+    .set({ categoryId, updatedAt: new Date() })
+    .where(eq(transactions.id, id))
+    .returning();
+
+  res.json({ transaction });
 });
