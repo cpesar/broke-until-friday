@@ -31,6 +31,9 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.2.1
+      jose:
+        specifier: ^6.2.8
+        version: 6.2.8
       plaid:
         specifier: ^45.0.0
         version: 45.0.0

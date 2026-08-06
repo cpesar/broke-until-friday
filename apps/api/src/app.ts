@@ -5,6 +5,8 @@ import type { HealthCheckResponse } from "@budget-app/shared";
 import { auth } from "./lib/auth.js";
 import { requireSession } from "./middleware/requireSession.js";
 import { plaidRouter } from "./routes/plaid.js";
+import { plaidWebhookRouter } from "./routes/plaidWebhook.js";
+import { transactionsRouter } from "./routes/transactions.js";
 
 export function createApp() {
   const app = express();
@@ -16,8 +18,10 @@ export function createApp() {
     }),
   );
 
-  // Better Auth needs the raw request stream, so it must be mounted before express.json().
+  // Better Auth and the Plaid webhook receiver need the raw request stream,
+  // so both must be mounted before express.json().
   app.all("/api/auth/*splat", toNodeHandler(auth));
+  app.use("/api/plaid/webhook", plaidWebhookRouter);
 
   app.use(express.json());
 
@@ -34,6 +38,7 @@ export function createApp() {
   });
 
   app.use("/api/plaid", plaidRouter);
+  app.use("/api/transactions", transactionsRouter);
 
   return app;
 }

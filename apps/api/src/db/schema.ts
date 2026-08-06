@@ -5,6 +5,8 @@ import {
   boolean,
   uuid,
   numeric,
+  date,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -89,4 +91,37 @@ export const financialAccounts = pgTable("financial_accounts", {
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const transactions = pgTable("transactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  financialAccountId: uuid("financial_account_id")
+    .notNull()
+    .references(() => financialAccounts.id, { onDelete: "cascade" }),
+  plaidTransactionId: text("plaid_transaction_id").notNull().unique(),
+  amount: numeric("amount").notNull(),
+  isoCurrencyCode: text("iso_currency_code").default("USD"),
+  date: date("date").notNull(),
+  authorizedDate: date("authorized_date"),
+  name: text("name").notNull(),
+  merchantName: text("merchant_name"),
+  pending: boolean("pending").notNull().default(false),
+  plaidPfcPrimary: text("plaid_pfc_primary"),
+  plaidPfcDetailed: text("plaid_pfc_detailed"),
+  isRemoved: boolean("is_removed").notNull().default(false),
+  removedAt: timestamp("removed_at"),
+  raw: jsonb("raw"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const plaidWebhookEvents = pgTable("plaid_webhook_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  plaidItemId: text("plaid_item_id"),
+  webhookType: text("webhook_type").notNull(),
+  webhookCode: text("webhook_code").notNull(),
+  verified: boolean("verified").notNull(),
+  payload: jsonb("payload").notNull(),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });

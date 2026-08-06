@@ -15,6 +15,13 @@
       "when": 1786046272116,
       "tag": "0001_supreme_zzzax",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786047329470,
+      "tag": "0002_nostalgic_magik",
+      "breakpoints": true
     }
   ]
 }
