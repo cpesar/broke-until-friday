@@ -8,6 +8,7 @@ import { plaidRouter } from "./routes/plaid.js";
 import { plaidWebhookRouter } from "./routes/plaidWebhook.js";
 import { transactionsRouter } from "./routes/transactions.js";
 import { categoriesRouter } from "./routes/categories.js";
+import { budgetsRouter } from "./routes/budgets.js";
 import { seedDefaultCategories } from "./db/seedCategories.js";
 
 export function createApp() {
@@ -46,6 +47,7 @@ export function createApp() {
   app.use("/api/plaid", plaidRouter);
   app.use("/api/transactions", transactionsRouter);
   app.use("/api/categories", categoriesRouter);
+  app.use("/api/budgets", budgetsRouter);
 
   return app;
 }

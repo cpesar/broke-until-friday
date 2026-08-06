@@ -142,6 +142,30 @@ export const transactions = pgTable("transactions", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const budgets = pgTable(
+  "budgets",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    categoryId: uuid("category_id")
+      .notNull()
+      .references(() => categories.id, { onDelete: "cascade" }),
+    month: date("month").notNull(),
+    amount: numeric("amount").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("budgets_user_category_month_idx").on(
+      table.userId,
+      table.categoryId,
+      table.month,
+    ),
+  ],
+);
+
 export const plaidWebhookEvents = pgTable("plaid_webhook_events", {
   id: uuid("id").primaryKey().defaultRandom(),
   plaidItemId: text("plaid_item_id"),

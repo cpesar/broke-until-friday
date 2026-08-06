@@ -36,6 +36,13 @@
       "when": 1786049217845,
       "tag": "0004_clean_silvermane",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786050069031,
+      "tag": "0005_fluffy_malice",
+      "breakpoints": true
     }
   ]
 }

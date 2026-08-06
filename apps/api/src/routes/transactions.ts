@@ -1,39 +1,14 @@
 import { Router } from "express";
 import { and, eq, gte, lte, inArray, desc } from "drizzle-orm";
 import { db } from "../db/client.js";
-import {
-  plaidItems,
-  financialAccounts,
-  transactions,
-  categories,
-} from "../db/schema.js";
+import { plaidItems, transactions, categories } from "../db/schema.js";
 import { requireSession } from "../middleware/requireSession.js";
 import { syncTransactionsForItem } from "../lib/transactionSync.js";
+import { getUserAccountIds } from "../lib/userAccounts.js";
 
 export const transactionsRouter = Router();
 
 transactionsRouter.use(requireSession);
-
-async function getUserAccountIds(userId: string): Promise<string[]> {
-  const items = await db
-    .select({ id: plaidItems.id })
-    .from(plaidItems)
-    .where(eq(plaidItems.userId, userId));
-
-  if (!items.length) return [];
-
-  const accounts = await db
-    .select({ id: financialAccounts.id })
-    .from(financialAccounts)
-    .where(
-      inArray(
-        financialAccounts.plaidItemId,
-        items.map((item) => item.id),
-      ),
-    );
-
-  return accounts.map((account) => account.id);
-}
 
 transactionsRouter.post("/sync", async (req, res) => {
   const userId = req.session!.user.id;

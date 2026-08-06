@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { AuthCard } from "@/components/AuthCard";
 import { PlaidConnect } from "@/components/PlaidConnect";
 import { TransactionsList } from "@/components/TransactionsList";
+import { BudgetsView } from "@/components/BudgetsView";
 import { authClient } from "@/lib/auth-client";
 
 function App() {
@@ -43,6 +44,7 @@ function App() {
       <p className="text-muted-foreground text-sm">{meCheck ?? "Checking with server…"}</p>
       <PlaidConnect />
       <TransactionsList />
+      <BudgetsView />
       <Button
         variant="outline"
         onClick={async () => {
