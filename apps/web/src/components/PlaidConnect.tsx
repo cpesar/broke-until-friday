@@ -72,7 +72,7 @@ export function PlaidConnect() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Connected accounts</CardTitle>
         <CardDescription>Link a bank account via Plaid Sandbox.</CardDescription>

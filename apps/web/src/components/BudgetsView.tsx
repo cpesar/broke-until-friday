@@ -75,9 +75,9 @@ export function BudgetsView() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => setMonth((m) => shiftMonth(m, -1))}>
             ←
           </Button>
@@ -88,19 +88,19 @@ export function BudgetsView() {
         </div>
         <CardDescription>Set a budget per category.</CardDescription>
       </CardHeader>
-      <CardContent className="flex max-h-96 flex-col gap-3 overflow-y-auto">
-        {progress.map((p) => {
-          const budgeted = Number(p.budgeted);
-          const spent = Number(p.spent);
-          const pct = budgeted > 0 ? Math.min(100, Math.max(0, (spent / budgeted) * 100)) : 0;
-          return (
-            <div key={p.categoryId} className="flex flex-col gap-1 rounded-md border p-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">
-                  {p.icon ? `${p.icon} ` : ""}
-                  {p.name}
-                </span>
-                <div className="flex items-center gap-1">
+      <CardContent>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {progress.map((p) => {
+            const budgeted = Number(p.budgeted);
+            const spent = Number(p.spent);
+            const pct = budgeted > 0 ? Math.min(100, Math.max(0, (spent / budgeted) * 100)) : 0;
+            return (
+              <div key={p.categoryId} className="flex flex-col gap-1 rounded-md border p-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">
+                    {p.icon ? `${p.icon} ` : ""}
+                    {p.name}
+                  </span>
                   <Input
                     className="h-7 w-20 text-right"
                     value={drafts[p.categoryId] ?? ""}
@@ -110,19 +110,19 @@ export function BudgetsView() {
                     onBlur={() => saveBudget(p.categoryId)}
                   />
                 </div>
+                <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                  <div
+                    className="bg-primary h-full"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="text-muted-foreground text-xs">
+                  {spent.toFixed(2)} spent of {budgeted.toFixed(2)} budgeted
+                </span>
               </div>
-              <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
-                <div
-                  className="bg-primary h-full"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <span className="text-muted-foreground text-xs">
-                {spent.toFixed(2)} spent of {budgeted.toFixed(2)} budgeted
-              </span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </CardContent>
     </Card>
   );
