@@ -5,6 +5,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { TransactionsPage } from "@/pages/TransactionsPage";
 import { BudgetsPage } from "@/pages/BudgetsPage";
 import { authClient } from "@/lib/auth-client";
+import { APP_NAME } from "@budget-app/shared";
 
 function App() {
   const { data: session, isPending } = authClient.useSession();
@@ -19,7 +20,17 @@ function App() {
 
   if (!session) {
     return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-4">
+      <div
+        className="flex min-h-svh flex-col items-center justify-center gap-6 p-4"
+        style={{
+          background:
+            "radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent), var(--background) 70%)",
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <img src="/favicon.svg" alt="" className="size-7" />
+          <span className="font-heading text-lg font-semibold">{APP_NAME}</span>
+        </div>
         <AuthCard />
       </div>
     );

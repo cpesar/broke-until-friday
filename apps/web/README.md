@@ -1,32 +1,9 @@
-# React + TypeScript + Vite
+The intended architecture (2 apps):
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+1. apps/api — an Express server (with better-auth, Drizzle/Postgres, Plaid). Deployed via apps/api/vercel.json, which points Vercel's @vercel/node builder at api/index.ts and routes everything there. This is https://budget-app-api-neho.vercel.app.
+2. apps/web — the React/Vite frontend. Deployed via apps/web/vercel.json, which does two rewrites:
 
-Currently, two official plugins are available:
+- /api/:path* → proxied straight through to https://budget-app-api-neho.vercel.app/api/:path* (so the browser only ever talks to one origin — the web app's domain — even though requests are actually served by the separate API deployment)
+- everything else → /index.html (SPA fallback for client-side routing)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+So in production, the browser only ever hits the web domain. Vercel's rewrite silently forwards /api/\* calls to the api project behind the scenes — same mechanism as the Vite dev proxy locally (server.proxy["/api"] → localhost:3001), just done at Vercel's edge instead of in Vite.

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardHeader,
@@ -95,12 +96,16 @@ export function BudgetsView() {
             const spent = Number(p.spent);
             const pct = budgeted > 0 ? Math.min(100, Math.max(0, (spent / budgeted) * 100)) : 0;
             return (
-              <div key={p.categoryId} className="flex flex-col gap-1 rounded-md border p-3 text-sm">
+              <div key={p.categoryId} className="flex flex-col gap-2 rounded-xl bg-card p-3.5 text-sm ring-1 ring-foreground/10">
                 <div className="flex items-center justify-between">
-                  <span className="font-medium">
+                  <Badge variant="secondary" className="gap-1.5">
+                    <span
+                      className="size-1.5 rounded-full"
+                      style={{ backgroundColor: p.color ?? "var(--muted-foreground)" }}
+                    />
                     {p.icon ? `${p.icon} ` : ""}
                     {p.name}
-                  </span>
+                  </Badge>
                   <Input
                     className="h-7 w-20 text-right"
                     value={drafts[p.categoryId] ?? ""}
@@ -112,8 +117,8 @@ export function BudgetsView() {
                 </div>
                 <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
                   <div
-                    className="bg-primary h-full"
-                    style={{ width: `${pct}%` }}
+                    className="h-full"
+                    style={{ width: `${pct}%`, backgroundColor: p.color ?? "var(--primary)" }}
                   />
                 </div>
                 <span className="text-muted-foreground text-xs">
