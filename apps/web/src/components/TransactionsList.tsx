@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardAction,
-} from "@/components/ui/card";
 
 interface Transaction {
   id: string;
@@ -25,6 +17,7 @@ interface Category {
   id: string;
   name: string;
   icon: string | null;
+  color: string | null;
   isDefault: boolean;
 }
 
@@ -94,73 +87,83 @@ export function TransactionsList() {
     loadCategories();
   }
 
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Transactions</CardTitle>
-        <CardDescription>
-          {syncMessage ?? "Pull the latest activity from Plaid."}
-        </CardDescription>
-        <CardAction>
-          <Button onClick={syncNow} disabled={syncing}>
-            {syncing ? "Syncing…" : "Sync now"}
-          </Button>
-        </CardAction>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex max-w-sm gap-2">
-          <Input
-            placeholder="New category name"
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-          />
-          <Button variant="outline" onClick={addCategory}>
-            Add category
-          </Button>
-        </div>
+  const categoriesById = Object.fromEntries(categories.map((c) => [c.id, c]));
 
-        {transactions.length === 0 && (
-          <p className="text-muted-foreground text-sm">No transactions yet.</p>
-        )}
-        <div className="flex flex-col">
-          {transactions.length > 0 && (
-            <div className="text-muted-foreground grid grid-cols-[110px_1fr_220px_120px] gap-4 border-b px-2 pb-2 text-xs font-medium">
-              <span>Date</span>
-              <span>Description</span>
-              <span>Category</span>
-              <span className="text-right">Amount</span>
-            </div>
-          )}
-          {transactions.map((txn) => (
-            <div
-              key={txn.id}
-              className="grid grid-cols-[110px_1fr_220px_120px] items-center gap-4 border-b px-2 py-3 text-sm last:border-b-0"
-            >
-              <span className="text-muted-foreground text-xs">
-                {txn.date}
-                {txn.pending ? " · pending" : ""}
-              </span>
-              <span className="font-medium">{txn.merchantName ?? txn.name}</span>
-              <select
-                className="border-input bg-background rounded-md border px-2 py-1 text-xs"
-                value={txn.categoryId ?? ""}
-                onChange={(e) => setCategory(txn.id, e.target.value)}
-              >
-                <option value="">Uncategorized</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.icon ? `${category.icon} ` : ""}
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <span className="text-right">
-                {txn.amount} {txn.isoCurrencyCode}
-              </span>
-            </div>
-          ))}
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Transactions</h1>
+          <p className="text-sm text-muted-foreground">
+            {syncMessage ?? "Pull the latest activity from Plaid."}
+          </p>
         </div>
-      </CardContent>
-    </Card>
+        <Button onClick={syncNow} disabled={syncing}>
+          {syncing ? "Syncing…" : "Sync now"}
+        </Button>
+      </div>
+
+      <div className="flex max-w-sm gap-2">
+        <Input
+          placeholder="New category name"
+          value={newCategoryName}
+          onChange={(e) => setNewCategoryName(e.target.value)}
+        />
+        <Button variant="outline" onClick={addCategory}>
+          Add category
+        </Button>
+      </div>
+
+      {transactions.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No transactions yet.</p>
+      ) : (
+        <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+          <div className="grid grid-cols-[110px_1fr_200px_120px] gap-4 border-b px-4 pb-2.5 pt-3 text-xs font-medium text-muted-foreground">
+            <span>Date</span>
+            <span>Description</span>
+            <span>Category</span>
+            <span className="text-right">Amount</span>
+          </div>
+          {transactions.map((txn) => {
+            const category = txn.categoryId ? categoriesById[txn.categoryId] : undefined;
+            const isInflow = Number(txn.amount) < 0;
+            return (
+              <div
+                key={txn.id}
+                className="grid grid-cols-[110px_1fr_200px_120px] items-center gap-4 border-b px-4 py-3 text-sm transition-colors last:border-b-0 hover:bg-muted/50"
+              >
+                <span className="text-xs text-muted-foreground">
+                  {txn.date}
+                  {txn.pending ? " · pending" : ""}
+                </span>
+                <span className="font-medium">{txn.merchantName ?? txn.name}</span>
+                <div className="relative">
+                  <span
+                    className="pointer-events-none absolute left-2.5 top-1/2 size-1.5 -translate-y-1/2 rounded-full"
+                    style={{ backgroundColor: category?.color ?? "var(--muted-foreground)" }}
+                  />
+                  <select
+                    className="w-full rounded-full border border-input bg-background py-1 pl-6 pr-2 text-xs"
+                    value={txn.categoryId ?? ""}
+                    onChange={(e) => setCategory(txn.id, e.target.value)}
+                  >
+                    <option value="">Uncategorized</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.icon ? `${c.icon} ` : ""}
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <span className={`text-right font-medium ${isInflow ? "text-(--color-positive)" : "text-foreground"}`}>
+                  {txn.amount} {txn.isoCurrencyCode}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
