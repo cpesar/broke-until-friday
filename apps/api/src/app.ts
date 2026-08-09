@@ -3,6 +3,7 @@ import cors from "cors";
 import { toNodeHandler } from "better-auth/node";
 import type { HealthCheckResponse } from "@budget-app/shared";
 import { auth } from "./lib/auth.js";
+import { getTrustedOrigins } from "./lib/webOrigins.js";
 import { requireSession } from "./middleware/requireSession.js";
 import { plaidRouter } from "./routes/plaid.js";
 import { plaidWebhookRouter } from "./routes/plaidWebhook.js";
@@ -21,7 +22,7 @@ export function createApp() {
 
   app.use(
     cors({
-      origin: process.env.WEB_ORIGIN ?? "http://localhost:5173",
+      origin: getTrustedOrigins(),
       credentials: true,
     }),
   );
