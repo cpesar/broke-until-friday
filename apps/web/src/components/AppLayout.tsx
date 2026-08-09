@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from "react-router";
-import { LayoutDashboard, ArrowLeftRight, PiggyBank, LogOut } from "lucide-react";
+import { LayoutDashboard, ArrowLeftRight, PiggyBank, CreditCard, LogOut } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { authClient } from "@/lib/auth-client";
 import { APP_NAME } from "@budget-app/shared";
@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/transactions", label: "Transactions", icon: ArrowLeftRight },
   { to: "/budgets", label: "Budgets", icon: PiggyBank },
+  { to: "/credit", label: "Credit", icon: CreditCard },
 ];
 
 function initials(name: string | undefined) {
