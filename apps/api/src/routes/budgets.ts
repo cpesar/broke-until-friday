@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { budgets, categories, transactions } from "../db/schema.js";
 import { requireSession } from "../middleware/requireSession.js";
 import { getUserAccountIds } from "../lib/userAccounts.js";
+import { getSpendingAlertStatus } from "../lib/spendingAlerts.js";
 
 export const budgetsRouter = Router();
 
@@ -158,15 +159,20 @@ budgetsRouter.get("/progress", async (req, res) => {
       .map((row) => [row.categoryId as string, row.total]),
   );
 
-  const progress = visibleCategories.map((category) => ({
-    categoryId: category.id,
-    name: category.name,
-    icon: category.icon,
-    color: category.color,
-    isDefault: category.isDefault,
-    budgeted: budgetByCategory.get(category.id) ?? "0",
-    spent: spentByCategory.get(category.id) ?? "0",
-  }));
+  const progress = visibleCategories.map((category) => {
+    const budgeted = budgetByCategory.get(category.id) ?? "0";
+    const spent = spentByCategory.get(category.id) ?? "0";
+    return {
+      categoryId: category.id,
+      name: category.name,
+      icon: category.icon,
+      color: category.color,
+      isDefault: category.isDefault,
+      budgeted,
+      spent,
+      status: getSpendingAlertStatus(Number(spent), Number(budgeted)),
+    };
+  });
 
   res.json({ month, progress });
 });

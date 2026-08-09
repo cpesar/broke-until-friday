@@ -1,4 +1,5 @@
 import { PlaidConnect } from "@/components/PlaidConnect";
+import { SpendingAlertsBanner } from "@/components/SpendingAlertsBanner";
 import { authClient } from "@/lib/auth-client";
 
 export function DashboardPage() {
@@ -7,6 +8,7 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">Welcome, {session?.user.name}</h1>
+      <SpendingAlertsBanner />
       <PlaidConnect />
     </div>
   );

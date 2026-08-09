@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,21 +9,13 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-
-interface CategoryProgress {
-  categoryId: string;
-  name: string;
-  icon: string | null;
-  color: string | null;
-  isDefault: boolean;
-  budgeted: string;
-  spent: string;
-}
-
-function currentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
+import {
+  useBudgetProgress,
+  useSaveBudget,
+  type SpendingAlertStatus,
+} from "@/hooks/useBudgetProgress";
+import { currentMonth } from "@/lib/month";
+import { WARNING_COLOR, warningBadgeStyle } from "@/lib/spendingAlertColors";
 
 function shiftMonth(month: string, delta: number): string {
   const [year, monthNum] = month.split("-").map(Number);
@@ -39,40 +31,31 @@ function formatMonth(month: string): string {
   });
 }
 
+function progressColor(status: SpendingAlertStatus, categoryColor: string | null) {
+  if (status === "over") return "var(--destructive)";
+  if (status === "warning") return WARNING_COLOR;
+  return categoryColor ?? "var(--primary)";
+}
+
 export function BudgetsView() {
   const [month, setMonth] = useState(currentMonth());
-  const [progress, setProgress] = useState<CategoryProgress[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const { data: progress = [] } = useBudgetProgress(month);
+  const saveBudget = useSaveBudget();
 
-  const loadProgress = useCallback((forMonth: string) => {
-    fetch(`/api/budgets/progress?month=${forMonth}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setProgress(data.progress ?? []);
-        setDrafts(
-          Object.fromEntries(
-            (data.progress ?? []).map((p: CategoryProgress) => [
-              p.categoryId,
-              p.budgeted,
-            ]),
-          ),
-        );
-      });
-  }, []);
-
-  useEffect(() => {
-    loadProgress(month);
-  }, [month, loadProgress]);
-
-  async function saveBudget(categoryId: string) {
-    const amount = drafts[categoryId];
-    if (amount === undefined || amount === "") return;
-    await fetch("/api/budgets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ categoryId, month, amount }),
-    });
-    loadProgress(month);
+  function handleBlur(categoryId: string, amount: string) {
+    if (amount === "") return;
+    saveBudget.mutate(
+      { categoryId, month, amount },
+      {
+        onSuccess: () => {
+          setDrafts((d) => {
+            const { [categoryId]: _removed, ...rest } = d;
+            return rest;
+          });
+        },
+      },
+    );
   }
 
   return (
@@ -95,9 +78,11 @@ export function BudgetsView() {
             const budgeted = Number(p.budgeted);
             const spent = Number(p.spent);
             const pct = budgeted > 0 ? Math.min(100, Math.max(0, (spent / budgeted) * 100)) : 0;
+            const draft = drafts[p.categoryId] ?? p.budgeted;
+            const barColor = progressColor(p.status, p.color);
             return (
               <div key={p.categoryId} className="flex flex-col gap-2 rounded-xl bg-card p-3.5 text-sm ring-1 ring-foreground/10">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <Badge variant="secondary" className="gap-1.5">
                     <span
                       className="size-1.5 rounded-full"
@@ -108,17 +93,25 @@ export function BudgetsView() {
                   </Badge>
                   <Input
                     className="h-7 w-20 text-right"
-                    value={drafts[p.categoryId] ?? ""}
+                    value={draft}
                     onChange={(e) =>
                       setDrafts((d) => ({ ...d, [p.categoryId]: e.target.value }))
                     }
-                    onBlur={() => saveBudget(p.categoryId)}
+                    onBlur={() => handleBlur(p.categoryId, drafts[p.categoryId] ?? p.budgeted)}
                   />
                 </div>
+                {p.status !== "ok" && (
+                  <Badge
+                    variant={p.status === "over" ? "destructive" : "outline"}
+                    style={warningBadgeStyle(p.status)}
+                  >
+                    {p.status === "over" ? "Over budget" : "Near limit"}
+                  </Badge>
+                )}
                 <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
                   <div
                     className="h-full"
-                    style={{ width: `${pct}%`, backgroundColor: p.color ?? "var(--primary)" }}
+                    style={{ width: `${pct}%`, backgroundColor: barColor }}
                   />
                 </div>
                 <span className="text-muted-foreground text-xs">
