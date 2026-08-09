@@ -1,55 +1,22 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import { Plus, X } from "lucide-react";
-
-interface PlaidAccount {
-  id: string;
-  name: string;
-  mask: string | null;
-  currentBalance: string | null;
-  isoCurrencyCode: string | null;
-}
-
-interface PlaidItem {
-  id: string;
-  institutionName: string;
-  status: string;
-  accounts: PlaidAccount[];
-}
+import { useCreatePlaidLinkToken, useExchangePlaidToken, usePlaidItems, useRemovePlaidItem } from "@/hooks/usePlaid";
 
 export function PlaidConnect() {
-  const [items, setItems] = useState<PlaidItem[]>([]);
+  const { data: items = [] } = usePlaidItems();
   const [linkToken, setLinkToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const loadItems = useCallback(() => {
-    fetch("/api/plaid/items")
-      .then((res) => res.json())
-      .then((data) => setItems(data.items ?? []));
-  }, []);
-
-  useEffect(() => {
-    loadItems();
-  }, [loadItems]);
-
-  const createLinkToken = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch("/api/plaid/link-token", { method: "POST" });
-    const data = await res.json();
-    setLinkToken(data.linkToken);
-    setLoading(false);
-  }, []);
+  const createLinkToken = useCreatePlaidLinkToken();
+  const exchangeToken = useExchangePlaidToken();
+  const removePlaidItem = useRemovePlaidItem();
 
   const { open, ready } = usePlaidLink({
     token: linkToken ?? "",
-    onSuccess: async (publicToken) => {
-      await fetch("/api/plaid/exchange-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicToken }),
+    onSuccess: (publicToken) => {
+      if (!publicToken) return;
+      exchangeToken.mutate(publicToken, {
+        onSuccess: () => setLinkToken(null),
       });
-      setLinkToken(null);
-      loadItems();
     },
   });
 
@@ -59,9 +26,10 @@ export function PlaidConnect() {
     }
   }, [linkToken, ready, open]);
 
-  async function removeItem(id: string) {
-    await fetch(`/api/plaid/items/${id}`, { method: "DELETE" });
-    loadItems();
+  function handleAddAccount() {
+    createLinkToken.mutate(undefined, {
+      onSuccess: (token) => setLinkToken(token),
+    });
   }
 
   const accounts = items.flatMap((item) =>
@@ -112,7 +80,7 @@ export function PlaidConnect() {
                   type="button"
                   aria-label="Remove account"
                   className="text-muted-foreground transition-colors hover:text-destructive"
-                  onClick={() => removeItem(itemId)}
+                  onClick={() => removePlaidItem.mutate(itemId)}
                 >
                   <X className="size-4" />
                 </button>
@@ -139,12 +107,12 @@ export function PlaidConnect() {
 
           <button
             type="button"
-            onClick={createLinkToken}
-            disabled={loading}
+            onClick={handleAddAccount}
+            disabled={createLinkToken.isPending}
             className="flex min-h-24 flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border text-sm text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary disabled:pointer-events-none disabled:opacity-50"
           >
             <Plus className="size-5" />
-            {loading ? "Connecting…" : "Add account"}
+            {createLinkToken.isPending ? "Connecting…" : "Add account"}
           </button>
         </div>
       </div>
