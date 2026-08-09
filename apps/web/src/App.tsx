@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { TransactionsPage } from "@/pages/TransactionsPage";
 import { BudgetsPage } from "@/pages/BudgetsPage";
+import { CreditPage } from "@/pages/CreditPage";
 import { authClient } from "@/lib/auth-client";
 import { APP_NAME } from "@budget-app/shared";
 
@@ -43,6 +44,7 @@ function App() {
           <Route index element={<DashboardPage />} />
           <Route path="transactions" element={<TransactionsPage />} />
           <Route path="budgets" element={<BudgetsPage />} />
+          <Route path="credit" element={<CreditPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
